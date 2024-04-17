@@ -17,6 +17,8 @@ metadata:
   namespace: ebelarte-tenant
 spec:
   params:
+  - name: kernel-version
+    value: KERNEL_VERSION=5.14.0-284.57.1.el9_2
   - name: dockerfile
     value: Dockerfile
   - name: git-url
@@ -84,6 +86,10 @@ spec:
       description: Path to the Dockerfile inside the context specified by parameter
         path-context
       name: dockerfile
+      type: string
+    - default: ""
+      description: Extra build args
+      name: kernel-version
       type: string
     - default: "false"
       description: Force rebuild image
@@ -214,7 +220,7 @@ spec:
       - name: COMMIT_SHA
         value: $(tasks.clone-repository.results.commit)
       - name: BUILD_EXTRA_ARGS
-        value: "KERNEL_VERSION=5.14.0-284.57.1.el9_2"
+        value: $(params.kernel-version)
   
       runAfter:
       - prefetch-dependencies
