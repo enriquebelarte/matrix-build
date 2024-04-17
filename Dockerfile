@@ -1,4 +1,5 @@
-FROM registry.distributed-ci.io/dtk/driver-toolkit:5.14.0-284.57.1.el9_2 as builder
+ARG KERNEL_VERSION=''
+FROM registry.distributed-ci.io/dtk/driver-toolkit:${KERNEL_VERSION} as builder
 
 ARG ARCH='x86_64'
 ARG DRIVER_VERSION='535.161.08'
