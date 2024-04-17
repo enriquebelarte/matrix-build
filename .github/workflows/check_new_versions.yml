@@ -1,0 +1,45 @@
+name: Create Branch
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  create_branch:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Set up Git
+      run: |
+        git config --local user.email "action@github.com"
+        git config --local user.name "GitHub Action"
+
+    - name: Execute script to parse JSON
+      run: |
+        json=$(cat drivers_matrix.json)
+        for row in $(echo "${json}" | jq -c '.[]'); do
+            published=$(echo "${row}" | jq -r '.published')
+            if [ "$published" = "n" ]; then
+                release_version=$(echo "${row}" | jq -r '.release_version')
+                kernel_version=$(echo "${row}" | jq -r '.kernel_version')
+                branch_name="${release_version}-${kernel_version}"
+                echo "Creating branch $branch_name"
+                git checkout -b "$branch_name"
+                echo "Changing Dockerfile and Pipelinerun to match new version"
+                sed -i "s/ARG KERNEL_VERSION='[^']*'/ARG KERNEL_VERSION='$kernel_version'/g" Dockerfile
+                sed -i "s/ARG DRIVER_VERSION=''[^']*'/ARG DRIVER_VERSION='$driver_version'/g" Dockerfile
+                sed -i "s/'{{target_branch}}'/\"$branch_name\"/g" ./.tekton/matrix-build-push.yaml
+                sed -i "/target_branch\s*==\s*\"main\"/s/main/$branch_name/" ./.tekton/matrix-build-push.yaml
+                git add .
+                git commit -m "Build version $driver_version-$kernel_version"
+                git push origin "$branch_name"
+                git checkout main
+            fi
+        done
+
+    - name: Finish
+      run: echo "Branches created successfully"
