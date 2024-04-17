@@ -20,7 +20,7 @@ jobs:
 
     - name: Execute script to parse JSON
       run: |
-        json=$(cat drivers_matrix.json)
+        json=$(cat data/drivers_matrix.json)
         for row in $(echo "${json}" | jq -c '.[]'); do
             published=$(echo "${row}" | jq -r '.published')
             if [ "$published" = "n" ]; then
