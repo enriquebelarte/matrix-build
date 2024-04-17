@@ -33,7 +33,7 @@ jobs:
                 sed -i "s/ARG KERNEL_VERSION='[^']*'/ARG KERNEL_VERSION='$kernel_version'/g" Dockerfile
                 sed -i "s/ARG DRIVER_VERSION=''[^']*'/ARG DRIVER_VERSION='$driver_version'/g" Dockerfile
                 sed -i "s/'{{target_branch}}'/\"$branch_name\"/g" ./.tekton/matrix-build-push.yaml ./.tekton/matrix-build-pull-request.yaml
-                sed -i "/target_branch\s*==\s*\"main\"/s/main/$branch_name/" ./.tekton/matrix-build-push.yaml ./.tekton/matrix-build-pull-request.yaml
+                sed -i "s/target_branch == \"main\"/target_branch == \"$branch_name\"/g" ./.tekton/matrix-build-push.yaml ./.tekton/matrix-build-pull-request.yaml
                 git add .
                 git commit -m "Build version $branch_name"
                 git push origin "$branch_name"
