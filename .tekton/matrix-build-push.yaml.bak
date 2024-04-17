@@ -213,9 +213,6 @@ spec:
         value: $(params.image-expires-after)
       - name: COMMIT_SHA
         value: $(tasks.clone-repository.results.commit)
-      - name: BUILD_EXTRA_ARGS
-        value: "KERNEL_VERSION=5.14.0-284.57.1.el9_2"
-  
       runAfter:
       - prefetch-dependencies
       taskRef:
