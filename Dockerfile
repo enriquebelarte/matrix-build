@@ -7,7 +7,6 @@ ARG DRIVER_EPOCH='1'
 ARG KERNEL_VERSION=''
 ARG RHEL_VERSION='9.2'
 ARG KERNEL_SOURCES='/usr/src/kernels/${KERNEL_VERSION}.${ARCH}'
-ARG KERNEL_OUTPUT='/usr/src/kernels/${KERNEL_VERSION}.${ARCH}'
 
 WORKDIR /home/builder
 
@@ -18,7 +17,7 @@ RUN export KVER=$(echo ${KERNEL_VERSION} | cut -d '-' -f 1) \
         KSOURCES=$(echo ${KERNEL_VERSION}.${ARCH}) && \
         git clone -b ${DRIVER_VERSION}  https://github.com/NVIDIA/open-gpu-kernel-modules.git && \
         cd open-gpu-kernel-modules && \
-        make SYSSRC=${KERNEL_SOURCES} SYSOUT=${KERNEL_OUTPUT} modules
+        make SYSSRC=${KERNEL_SOURCES} SYSOUT=${KERNEL_SOURCES} modules
 
 FROM scratch
 COPY --from=builder /home/builder/open-gpu-kernel-modules/kernel-open/*.ko /drivers/
