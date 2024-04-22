@@ -3,7 +3,7 @@ name: Create Branch
 on:
   push:
     branches:
-      - mainblablal
+      - main
 
 jobs:
   create_branch:
