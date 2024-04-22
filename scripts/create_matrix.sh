@@ -52,19 +52,19 @@ for release in $(echo "${release_matrix}" | jq -c '.[]'); do
     image_url=$(echo "$release" | jq -r '.image')
     published=$(check_image_exists "$image_url")
     modified_release_info=$(echo "$release" | jq --arg published "$published" '. + {published: $published}')
-    echo "$modified_release_info" >> tmp_matrix
+    echo "$modified_release_info" >> $json_dir/tmp_matrix
 done
 
 # Check if any entry has "published":"n" if not just exit
-if ! echo "$(<tmp_matrix)" | jq -sc '.' | jq 'map(select(.published == "n")) | any' | grep -q true; then
+if ! echo "$(<$json_dir/tmp_matrix)" | jq -sc '.' | jq 'map(select(.published == "n")) | any' | grep -q true; then
     echo "No versions found at matrix to be built. All published yet."
-    rm tmp_matrix
+    rm $json_dir/tmp_matrix
     exit 0
 else
 # Format a whole JSON for later process and call script for Dockerfile and pipelineRun changes
     echo "New versions found at matrix. Running build pipeline."
-    cat tmp_matrix | jq -sc '.' > $json_dir/drivers_matrix.json
+    cat $json_dir/tmp_matrix | jq -sc '.' > $json_dir/drivers_matrix.json
     md5sum $json_dir/drivers_matrix.json > $json_dir/drivers_matrix.MD5SUM
-    rm tmp_matrix
+    rm $json_dir/tmp_matrix
 fi
 
