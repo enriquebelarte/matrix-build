@@ -17,33 +17,60 @@ jobs:
       run: |
         git config --local user.email "action@github.com"
         git config --local user.name "GitHub Action"
+  
+    - name: Read contents of MD5SUM in repository
+      id: read-repo-file
+      working-directory: data 
+      run: echo "md5_repo=$(cat drivers_matrix.MD5SUM)" >> "$GITHUB_ENV"
 
-    - name: Execute script to parse JSON
-      run: |
-        json=$(cat data/drivers_matrix.json)
-        for row in $(echo "${json}" | jq -c '.[]'); do
-            published=$(echo "${row}" | jq -r '.published')
-            if [ "$published" = "n" ]; then
-                release_version=$(echo "${row}" | jq -r '.release_version')
-                kernel_version=$(echo "${row}" | jq -r '.kernel_version')
-                branch_name="${release_version}-${kernel_version}"
-                remote_registry="quay.io/ebelarte"
-                image="${remote_registry}/nvidia-build-drivers:${release_version}-${kernel_version}"
-                echo "Creating branch $branch_name"
-                git checkout -b "$branch_name"
-                echo "Changing Dockerfile and Pipelinerun to match new version"
-                sed -i "s/ARG KERNEL_VERSION='[^']*'/ARG KERNEL_VERSION='$kernel_version'/g" Dockerfile
-                sed -i "s/ARG DRIVER_VERSION='[^']*'/ARG DRIVER_VERSION='$release_version'/g" Dockerfile
-                sed -i "s/'{{target_branch}}'/\"$branch_name\"/g" ./.tekton/matrix-build-push.yaml ./.tekton/matrix-build-pull-request.yaml
-                sed -i "s/target_branch == \"main\"/target_branch == \"$branch_name\"/g" ./.tekton/matrix-build-push.yaml ./.tekton/matrix-build-pull-request.yaml
-                # Changed delimiters to avoid conflict with $image variable
-                sed -i "\#- name: output-image#{n;s#value: .*#value: ${image}#}" ./.tekton/matrix-build-push.yaml ./.tekton/matrix-build-pull-request.yaml 
-                git add .
-                git commit -m "Build version $branch_name"
-                git push origin "$branch_name"
-                git checkout main
-            fi
-        done
+     - name: Run matrix
+       id: run-matrix
+       working-directory: data 
+       run: |
+         bash ../scripts/create_matrix.sh
+         echo "md5_live=$(cat drivers_matrix.MD5SUM)" >> "$GITHUB_ENV"
 
-    - name: Finish
-      run: echo "Branches created successfully"
+      - name: Check changes at MD5 files 
+        id: show-diffs
+        run: |
+          echo "MD5 REPO:"
+          printf '%s\n' "$md5_repo" 
+          echo "MD5 LIVE:"
+          printf '%s\n' "$md5_live" 
+
+
+      - name: Execute script to parse JSON
+        run: |
+          if [ "$md5_repo" != "$md5_live" ]; then
+             echo "md5_changed=true" >> "$GITHUB_ENV"
+             json=$(cat data/drivers_matrix.json)
+             for row in $(echo "${json}" | jq -c '.[]'); do
+                 published=$(echo "${row}" | jq -r '.published')
+                 if [ "$published" = "n" ]; then
+                     release_version=$(echo "${row}" | jq -r '.release_version')
+                     kernel_version=$(echo "${row}" | jq -r '.kernel_version')
+                     branch_name="${release_version}-${kernel_version}"
+                     remote_registry="quay.io/ebelarte"
+                     image="${remote_registry}/nvidia-build-drivers:${release_version}-${kernel_version}"
+                     echo "Creating branch $branch_name"
+                     git checkout -b "$branch_name"
+                     echo "Changing Dockerfile and Pipelinerun to match new version"
+                     sed -i "s/ARG KERNEL_VERSION='[^']*'/ARG KERNEL_VERSION='$kernel_version'/g" Dockerfile
+                     sed -i "s/ARG DRIVER_VERSION='[^']*'/ARG DRIVER_VERSION='$release_version'/g" Dockerfile
+                     sed -i "s/'{{target_branch}}'/\"$branch_name\"/g" ./.tekton/matrix-build-push.yaml ./.tekton/matrix-build-pull-request.yaml
+                     sed -i "s/target_branch == \"main\"/target_branch == \"$branch_name\"/g" ./.tekton/matrix-build-push.yaml ./.tekton/matrix-build-pull-request.yaml
+                     # Changed delimiters to avoid conflict with $image variable
+                     sed -i "\#- name: output-image#{n;s#value: .*#value: ${image}#}" ./.tekton/matrix-build-push.yaml ./.tekton/matrix-build-pull-request.yaml 
+                     git add .
+                     git commit -m "Build version $branch_name"
+                     git push origin "$branch_name"
+                     git checkout main
+                 fi
+             done
+          else
+            echo "md5_changed=false" >> "$GITHUB_ENV"
+            exit 0
+          fi
+
+      - name: Finish
+        run: echo "Branches created successfully"
