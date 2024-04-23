@@ -8,10 +8,9 @@ json_dir="../data"
 # Set the image driver name and the registry
 driver_name="nvidia-build-drivers"
 registry="quay.io/ebelarte"
-# Read from the original releases JSON only types LTS or Production
-#releases_raw=$(curl -sL https://raw.githubusercontent.com/enriquebelarte/nvidia-build-drivers/main/matrix/releases.json
-# Add filter as NVIDIA repository branch starts with version 515.x.y
-releases_raw=$(curl -sL https://docs.nvidia.com/datacenter/tesla/drivers/releases.json | jq '.[] | select((.driver_info[] | .release_version | split(".") | map(tonumber)) >= [515,0,0])')
+# Read from the original releases JSON only types LTS or Production 
+python filter_nvidia_releases.py > $json_dir/filtered_releases.json
+releases_raw=$(cat $json_dir/filtered_releases.json)
 releases_json_lts=$(echo "$releases_raw" | jq -r '.[] | select(.type == "lts branch")')
 releases_json_prod=$(echo "$releases_raw" | jq -r '.[] | select(.type == "production branch")')
 
