@@ -4,9 +4,9 @@ metadata:
   annotations:
     build.appstudio.openshift.io/repo: https://github.com/enriquebelarte/matrix-build?rev={{revision}}
     build.appstudio.redhat.com/commit_sha: '{{revision}}'
-    build.appstudio.redhat.com/target_branch: '{{target_branch}}'
+    build.appstudio.redhat.com/target_branch: "535.129.03-5.14.0-284.52.1.el9_2"
     pipelinesascode.tekton.dev/max-keep-runs: "3"
-    pipelinesascode.tekton.dev/on-cel-expression: event == "push" && target_branch == "main"
+    pipelinesascode.tekton.dev/on-cel-expression: event == "push" && target_branch == "535.129.03-5.14.0-284.52.1.el9_2"
   creationTimestamp: null
   labels:
     appstudio.openshift.io/application: matrix-build
@@ -23,7 +23,7 @@ spec:
   - name: git-url
     value: '{{source_url}}'
   - name: output-image
-    value: quay.io/redhat-user-workloads/ebelarte-tenant/matrix-build/matrix-build:{{revision}}
+    value: quay.io/ebelarte/nvidia-build-drivers:535.129.03-5.14.0-284.52.1.el9_2
   - name: path-context
     value: .
   - name: revision
